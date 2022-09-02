@@ -7,5 +7,5 @@ require ({{ range $val := .Modules }}
 )
 
 replace ({{ range $val := .Modules }}{{ if ne .Replace ""}}
-        {{$val.Name}} {{$val.Version}} => {{$val.Replace}}{{ end }}{{ end }}
+    {{$val.Name}} {{$val.Version}} => {{$val.Replace}}{{ end }}{{ end }}
 )
