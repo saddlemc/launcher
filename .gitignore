@@ -1,0 +1,17 @@
+.idea/
+
+# Server binaries
+server
+server.exe
+# Configuration files
+saddle.toml
+saddle.lock
+# Output folder
+out/
+
+# Dragonfly & Saddle files
+config.toml
+world/
+plugins/
+players/
+resources/

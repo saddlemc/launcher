@@ -1,0 +1,11 @@
+module saddle-server
+
+go {{ .Go }}
+
+require ({{ range $val := .Modules }}
+    {{$val.Name}} {{$val.Version}}{{ if eq $val.Version "" }}v0.0.0{{end}}{{ end }}
+)
+
+replace ({{ range $val := .Modules }}{{ if ne .Replace ""}}
+        {{$val.Name}} {{$val.Version}} => {{$val.Replace}}{{ end }}{{ end }}
+)

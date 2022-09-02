@@ -1,0 +1,9 @@
+package main
+
+import ({{ range $val := .Imports }}
+    {{$val.Alias}}{{ if eq $val.Alias "" }}_ {{ end }}"{{$val.Package}}"
+{{ end }})
+
+func main() {
+{{.Run}}
+}

@@ -1,0 +1,21 @@
+[bundler]
+# If true, debug-log enables debug level logging. As a result, this will make the console fill up quicker.
+debug-log = false
+# Server-path allows the location of the server binary to be changed. The executable will be placed here by the bundler
+# and this is also the executable that will be run. The file name should be included in the path. On windows a '.exe'
+# extension will be added if it is not yet included. The directory that this file is in will be used as the working
+# directory for the server, meaning all files will be created in this directory.
+# WARNING: the file at this path may be overwritten.
+server-path = "./server"
+
+[server]
+# The version of the Saddle API to use on the server. This affects which plugins will be compatible with your server. If
+# you are unsure, leave it as "latest".
+api = "latest"
+# The version of dragonfly. This determines which minecraft version the server will be on, but may also determine in
+# part which plugins will work on the server. If you are unsure about this, keep this on "latest".
+dragonfly = "latest"
+
+# To install any plugins to the server, list them here. Each entry is marked with [[plugin]] before it and specifies
+# where it can be found, either on the disk or on a remote repository. See https://github.com/saddlemc/saddle/PLUGINS.md
+# for more info on how different plugins can be added.
