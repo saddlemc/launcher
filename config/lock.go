@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"os"
 )
 
@@ -23,7 +23,7 @@ type LockFile struct {
 
 // GetLock returns the current lockfile. If it does not exist, or if the lockfile is of a previous version, the data is
 // discarded and an empty lockfile is returned.
-func GetLock(log logrus.FieldLogger, path string) *LockFile {
+func GetLock(log *zerolog.Logger, path string) *LockFile {
 	lf := &LockFile{
 		Version: LockVersion,
 		Plugins: map[string]string{},
@@ -33,14 +33,14 @@ func GetLock(log logrus.FieldLogger, path string) *LockFile {
 	if os.IsNotExist(err) {
 		return lf
 	} else if err != nil {
-		log.Fatalf("Error trying to open saddle.lock: %v", err)
+		log.Fatal().Msgf("Error trying to open saddle.lock: %v", err)
 	}
 
 	err = json.Unmarshal(data, lf)
 	if err != nil {
 		// The saddle.lock data is only used to check if the server needs recompiling. In the event that the file could
 		// not be parsed (it may be outdated), an empty saddle.lock is returned instead.
-		log.Errorf("Error trying to parse saddle.lock: %v. Using an empty saddle.lock file.", err)
+		log.Error().Msgf("Error trying to parse saddle.lock: %v. Using an empty saddle.lock file.", err)
 		lf = &LockFile{
 			Version: LockVersion,
 			Plugins: map[string]string{},
@@ -49,7 +49,7 @@ func GetLock(log logrus.FieldLogger, path string) *LockFile {
 	if lf.Version > LockVersion {
 		// Do not override newer versions of the lockfile. We don't know if this may contain any important data in the
 		// future
-		log.Fatalf("Unknown lockfile version %d.", lf.Version)
+		log.Fatal().Msgf("Unknown lockfile version %d.", lf.Version)
 	} else if lf.Version < LockVersion {
 		// Older versions of the lockfile can be safely discarded. In this case we make
 		lf = &LockFile{

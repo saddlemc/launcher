@@ -3,7 +3,7 @@ package config
 import (
 	_ "embed"
 	"github.com/pelletier/go-toml/v2"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"os"
 )
 
@@ -34,31 +34,31 @@ type Config struct {
 
 // GetOrMakeConfig tries to load the config file, and if it does not exist the default config file will be created and
 // loaded.
-func GetOrMakeConfig(log logrus.StdLogger, path string) *Config {
+func GetOrMakeConfig(log *zerolog.Logger, path string) *Config {
 	cfg := &Config{}
 	cfgData, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
-		log.Println("Config file does not exist, creating default config...")
+		log.Info().Msgf("Config file does not exist, creating default config...")
 		// Create the now config.toml file.
 		file, err := os.Create(path)
 		if err != nil {
-			log.Fatalf("Error trying to create saddle.toml file: %v", err)
+			log.Fatal().Msgf("Error trying to create saddle.toml file: %v", err)
 		}
 		defer file.Close()
 		_, err = file.Write(defaultConfig)
 		if err != nil {
-			log.Fatalf("Error trying to create saddle.toml file: %v", err)
+			log.Fatal().Msgf("Error trying to create saddle.toml file: %v", err)
 		}
 
 		// Make sure the new data is parsed.
 		cfgData = defaultConfig
 	} else if err != nil {
-		log.Fatalf("Error trying to open saddle.toml file: %v", err)
+		log.Fatal().Msgf("Error trying to open saddle.toml file: %v", err)
 	}
 
 	err = toml.Unmarshal(cfgData, cfg)
 	if err != nil {
-		log.Fatalf("Error trying to parse saddle.toml file: %v", err)
+		log.Fatal().Msgf("Error trying to parse saddle.toml file: %v", err)
 	}
 	return cfg
 }

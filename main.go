@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"github.com/rs/zerolog"
 	"github.com/saddlemc/launcher/bundler"
 	"github.com/saddlemc/launcher/config"
 	"github.com/saddlemc/launcher/plugin"
 	"github.com/saddlemc/launcher/plugin/provider"
-	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"os/exec"
@@ -21,9 +21,16 @@ func main() {
 	// The code currently found in the program, and especially this main function, might currently be a bit messy. This
 	// is something that is planned to be worked on to improve it in the future.
 
-	log := logrus.StandardLogger()
-	log.Level = logrus.DebugLevel
-	log.Formatter = &logrus.TextFormatter{ForceColors: true, DisableTimestamp: true}
+	var logger *zerolog.Logger
+	{
+		l := zerolog.New(os.Stdout).
+			Level(zerolog.DebugLevel).
+			Output(zerolog.ConsoleWriter{
+				Out:          os.Stdout,
+				PartsExclude: []string{zerolog.TimestampFieldName},
+			})
+		logger = &l
+	}
 
 	// Get all flags. They may override some settings in the configuration.
 	flagOut := flag.String("out", "",
@@ -34,8 +41,8 @@ func main() {
 	)
 	flag.Parse()
 
-	log.Debugf("Reading saddle.toml...")
-	cfg := config.GetOrMakeConfig(log, "saddle.toml")
+	logger.Debug().Msgf("Reading saddle.toml...")
+	cfg := config.GetOrMakeConfig(logger, "saddle.toml")
 	if *flagOut != "" {
 		cfg.Bundler.Path = *flagOut
 	}
@@ -51,19 +58,19 @@ func main() {
 		}
 	}
 
-	log.Infof("Checking for updates...")
+	logger.Info().Msgf("Checking for updates...")
 
-	log.Debugf("Parsing plugins...")
+	logger.Debug().Msgf("Parsing plugins...")
 	provider.RegisterAll()
 	plugins, err := plugin.ParseAll(cfg.Plugin)
 	if err != nil {
 		log.Fatalf("Error trying to parse plugins: %v", err)
 	}
 
-	log.Debugf("Reading saddle.lock...")
+	logger.Debug().Msgf("Reading saddle.lock...")
 	// Get the current lockfile and also make a new lockfile. After checking plugin versions, the two will be compared
 	// to see if the already present
-	lock := config.GetLock(log, "saddle.lock")
+	lock := config.GetLock(logger, "saddle.lock")
 	newLock := config.LockFile{
 		Version:   config.LockVersion,
 		Api:       cfg.Server.Api,
@@ -91,25 +98,25 @@ func main() {
 
 	// Rebuilt the server is there was an update or if the '--recompile' flag was passed.
 	if needsRebuilding || *flagRecompile {
-		log.Infoln("Rebuilding server...")
+		logger.Info().Msgf("Rebuilding server...")
 		buildStart := time.Now()
 		// Create a temporary directory to build the server in.
 		temp, err := os.MkdirTemp("", "saddle_bundler_*")
 		if err != nil {
 			log.Fatalf("Could not create temporary directory: %v", err)
 		}
-		log.Debugf("Created temporary directory '%s'.", temp)
+		logger.Debug().Msgf("Created temporary directory '%s'.", temp)
 		// Be sure to remove the temporary directory after creating it.
 		defer os.RemoveAll(temp)
 
-		log.Debugln("Bundling plugins...")
+		logger.Debug().Msgf("Bundling plugins...")
 		err = bundler.Bundle(makeBundleConfig(cfg, temp, pluginModules))
 		if err != nil {
 			log.Fatalf("Could not bundle plugins: %v", err)
 		}
 
 		{
-			log.Debugln("Compiling server...")
+			logger.Debug().Msgf("Compiling server...")
 			cmd := exec.Command("go", "mod", "tidy")
 			cmd.Dir = temp
 			cmd.Stderr = os.Stderr
@@ -126,10 +133,10 @@ func main() {
 				panic(err)
 			}
 		}
-		log.Infof("Done! Finished building in %.3f seconds.", time.Now().Sub(buildStart).Seconds())
+		logger.Info().Msgf("Done! Finished building in %.3f seconds.", time.Now().Sub(buildStart).Seconds())
 
 		// The server has been built successfully. Now store the build information as the new lock file.
-		log.Debugf("Writing saddle.lock...")
+		logger.Debug().Msgf("Writing saddle.lock...")
 		data, err := json.Marshal(newLock)
 		if err != nil {
 			log.Fatalf("Could not encode saddle.lock: %v", err)
