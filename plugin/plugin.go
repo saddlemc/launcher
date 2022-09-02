@@ -35,6 +35,8 @@ func RegisterProvider(p Provider) {
 	providers = append(providers, p)
 }
 
+// ParseAll parses all plugins and tries to identify them. These plugins are then returned. This function does not take
+// care of making sure plugins are downloaded.
 func ParseAll(list []config.PluginInfo) ([]Plugin, error) {
 	plugins := make([]Plugin, 0, len(list))
 outerLoop:

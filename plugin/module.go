@@ -1,7 +1,7 @@
 package plugin
 
-// Module contains data about the plugin that should be bundled and where it can be found. This is used to generate
-// a go.mod file and a main.go file for the server executable.
+// Module contains data about the plugin that should be bundled and where it can be found. This is used to generate a
+// go.mod file and a main.go file for the server executable.
 type Module struct {
 	// Module is the name and version of the go module that the plugin is in. Generally, this will be formatted as
 	// "site.com/author/repo". This will be added to the go.mod file.

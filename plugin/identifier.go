@@ -17,7 +17,7 @@ type Identifier struct {
 	// the plugin has been updated since the last time the server has been compiled.
 	// Any algorithm may be used, as long as it is deterministic and unique for a specific version of a plugin's source
 	// code and the provider that was used to get the plugin. For local plugins, it may be the checksum of the entire
-	// directory where the plugin's go.mod file is in. For remote git repositories, the commit hash may work.
+	// directory where the plugin's go.mod file is in. For remote git repositories, the commit hash works.
 	Checksum string
 }
 
