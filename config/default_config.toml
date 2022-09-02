@@ -1,5 +1,6 @@
 [bundler]
-# If true, debug-log enables debug level logging. As a result, this will make the console fill up quicker.
+# If true, debug-log enables debug level logging. This provides a more detail log of what is going on, but is probably
+# not useful to most.
 debug-log = false
 # Server-path allows the location of the server binary to be changed. The executable will be placed here by the bundler
 # and this is also the executable that will be run. The file name should be included in the path. On windows a '.exe'
