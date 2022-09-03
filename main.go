@@ -68,15 +68,19 @@ func main() {
 
 	logger.Debug().Msgf("Reading saddle.lock...")
 	// Get the current lockfile and also make a new lockfile. After checking plugin versions, the two will be compared
-	// to see if the already present
-	lock := config.GetLock(logger, "saddle.lock")
+	// to see if the already present executable is outdated.
+	needsRebuilding := false
+	lock, ok := config.GetLock(logger, "saddle.lock")
+	if !ok {
+		// If the lockfile could not successfully be loaded we rebuild the server regardless.
+		needsRebuilding = true
+	}
 	newLock := config.LockFile{
 		Version:   config.LockVersion,
 		Api:       cfg.Server.Api,
 		Dragonfly: cfg.Server.Dragonfly,
 		Plugins:   map[string]string{},
 	}
-	needsRebuilding := false
 	pluginModules := make([]plugin.Module, 0, len(plugins))
 	for num, pl := range plugins {
 		latest, err := pl.Latest()

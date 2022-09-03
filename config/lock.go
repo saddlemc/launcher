@@ -21,30 +21,30 @@ type LockFile struct {
 	Plugins map[string]string
 }
 
-// GetLock returns the current lockfile. If it does not exist, or if the lockfile is of a previous version, the data is
-// discarded and an empty lockfile is returned.
-func GetLock(log *zerolog.Logger, path string) *LockFile {
-	lf := &LockFile{
+// GetLock returns the current lockfile. If it does not exist, or if the lockfile is of a previous version, an empty
+// lockfile and false will be returned.
+func GetLock(log *zerolog.Logger, path string) (LockFile, bool) {
+	lf := LockFile{
 		Version: LockVersion,
 		Plugins: map[string]string{},
 	}
 
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
-		return lf
+		return lf, false
 	} else if err != nil {
 		log.Fatal().Msgf("Error trying to open saddle.lock: %v", err)
 	}
 
-	err = json.Unmarshal(data, lf)
+	err = json.Unmarshal(data, &lf)
 	if err != nil {
 		// The saddle.lock data is only used to check if the server needs recompiling. In the event that the file could
 		// not be parsed (it may be outdated), an empty saddle.lock is returned instead.
 		log.Error().Msgf("Error trying to parse saddle.lock: %v. Using an empty saddle.lock file.", err)
-		lf = &LockFile{
+		return LockFile{
 			Version: LockVersion,
 			Plugins: map[string]string{},
-		}
+		}, false
 	}
 	if lf.Version > LockVersion {
 		// Do not override newer versions of the lockfile. We don't know if this may contain any important data in the
@@ -52,10 +52,10 @@ func GetLock(log *zerolog.Logger, path string) *LockFile {
 		log.Fatal().Msgf("Unknown lockfile version %d.", lf.Version)
 	} else if lf.Version < LockVersion {
 		// Older versions of the lockfile can be safely discarded. In this case we make
-		lf = &LockFile{
+		return LockFile{
 			Version: LockVersion,
 			Plugins: map[string]string{},
-		}
+		}, false
 	}
-	return lf
+	return lf, true
 }
