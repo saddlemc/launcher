@@ -8,7 +8,6 @@ import (
 	"github.com/saddlemc/launcher/config"
 	"github.com/saddlemc/launcher/plugin"
 	"github.com/saddlemc/launcher/plugin/provider"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,7 +49,7 @@ func main() {
 	// On Windows, a '.exe' is required after the server executable.
 	outFile, err := filepath.Abs(cfg.Bundler.Path)
 	if err != nil {
-		log.Panicf("Unable to get current working directory.")
+		logger.Panic().Msgf("Unable to get current working directory.")
 	}
 	if runtime.GOOS == "windows" {
 		if strings.ToLower(filepath.Ext(outFile)) != ".exe" {
@@ -64,7 +63,7 @@ func main() {
 	provider.RegisterAll()
 	plugins, err := plugin.ParseAll(cfg.Plugin)
 	if err != nil {
-		log.Fatalf("Error trying to parse plugins: %v", err)
+		logger.Fatal().Msgf("Error trying to parse plugins: %v", err)
 	}
 
 	logger.Debug().Msgf("Reading saddle.lock...")
@@ -82,13 +81,13 @@ func main() {
 	for num, pl := range plugins {
 		latest, err := pl.Latest()
 		if err != nil {
-			log.Fatalf("Error trying to fetch latest version for plugin entry #%d: %v", num, err)
+			logger.Fatal().Msgf("Error trying to fetch latest version for plugin entry #%d: %v", num, err)
 		}
 		if x, ok := lock.Plugins[latest.Module]; !ok || x != latest.Checksum {
 			needsRebuilding = true
 			err = pl.Pull()
 			if err != nil {
-				log.Fatalf("Error trying to update plugin entry #%d: %v", num, err)
+				logger.Fatal().Msgf("Error trying to update plugin entry #%d: %v", num, err)
 			}
 		}
 
@@ -103,16 +102,16 @@ func main() {
 		// Create a temporary directory to build the server in.
 		temp, err := os.MkdirTemp("", "saddle_bundler_*")
 		if err != nil {
-			log.Fatalf("Could not create temporary directory: %v", err)
+			logger.Fatal().Msgf("Could not create temporary directory: %v", err)
 		}
 		logger.Debug().Msgf("Created temporary directory '%s'.", temp)
 		// Be sure to remove the temporary directory after creating it.
 		defer os.RemoveAll(temp)
 
 		logger.Debug().Msgf("Bundling plugins...")
-		err = bundler.Bundle(makeBundleConfig(cfg, temp, pluginModules))
+		err = bundler.Bundle(makeBundleConfig(logger, cfg, temp, pluginModules))
 		if err != nil {
-			log.Fatalf("Could not bundle plugins: %v", err)
+			logger.Fatal().Msgf("Could not bundle plugins: %v", err)
 		}
 
 		{
@@ -139,18 +138,18 @@ func main() {
 		logger.Debug().Msgf("Writing saddle.lock...")
 		data, err := json.Marshal(newLock)
 		if err != nil {
-			log.Fatalf("Could not encode saddle.lock: %v", err)
+			logger.Fatal().Msgf("Could not encode saddle.lock: %v", err)
 		}
 
 		f, err := os.Create("saddle.lock")
 		if err != nil {
-			log.Fatalf("Could not open saddle.lock: %v", err)
+			logger.Fatal().Msgf("Could not open saddle.lock: %v", err)
 		}
 		defer f.Close()
 
 		_, err = f.Write(data)
 		if err != nil {
-			log.Fatalf("Could not write saddle.lock: %v", err)
+			logger.Fatal().Msgf("Could not write saddle.lock: %v", err)
 		}
 	}
 
@@ -168,7 +167,7 @@ func main() {
 	}
 }
 
-func makeBundleConfig(cfg *config.Config, path string, pluginModules []plugin.Module) bundler.Settings {
+func makeBundleConfig(logger *zerolog.Logger, cfg *config.Config, path string, pluginModules []plugin.Module) bundler.Settings {
 	// absIfLocal is a helper function used in this function. It makes the path absolute if not empty.
 	// todo: providing a local dragonfly or saddle location does not currently trigger a rebuild
 	absIfLocal := func(s string) string {
@@ -176,7 +175,7 @@ func makeBundleConfig(cfg *config.Config, path string, pluginModules []plugin.Mo
 			var err error
 			s, err = filepath.Abs(s)
 			if err != nil {
-				log.Panicf("Unable to get current working directory.")
+				logger.Panic().Msgf("Unable to get current working directory.")
 			}
 		}
 		return s
