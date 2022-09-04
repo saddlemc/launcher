@@ -1,6 +1,6 @@
 module saddle-server
 
-go {{ .Go }}
+go 1.19
 
 require ({{ range $val := .Modules }}
     {{$val.Name}} {{$val.Version}}{{ if eq $val.Version "" }}v0.0.0{{end}}{{ end }}

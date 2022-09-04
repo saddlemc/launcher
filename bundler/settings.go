@@ -10,8 +10,6 @@ type Settings struct {
 	Imports []Import
 	// Run is a fragment of code that should be added to the main function.
 	Run string
-	// Go is the minimum go version that should be listed in the go.mod file.
-	Go string
 }
 
 // Module represents a go module that is to be added to the go.mod file.

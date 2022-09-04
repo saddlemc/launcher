@@ -225,6 +225,5 @@ func makeBundleConfig(logger *zerolog.Logger, cfg *config.Config, path string, p
 		Modules: modules,
 		Imports: imports,
 		Run:     "Run()",
-		Go:      strings.TrimPrefix(runtime.Version(), "go"),
 	}
 }
