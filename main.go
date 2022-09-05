@@ -165,7 +165,7 @@ func main() {
 		cmd.Stderr = os.Stderr
 		cmd.Dir = filepath.Dir(outFile)
 		err = cmd.Run()
-		if err != nil {
+		if _, ok = err.(*exec.ExitError); err != nil && !ok {
 			panic(err)
 		}
 	}
