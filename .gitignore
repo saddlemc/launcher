@@ -1,5 +1,8 @@
 .idea/
 
+# Launcher binaries
+launcher
+launcher.exe
 # Server binaries
 server
 server.exe
