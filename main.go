@@ -102,6 +102,13 @@ func main() {
 		pluginModules = append(pluginModules, pl.Module())
 	}
 
+	// Check if the file exist and can be accessed. If the file does not exist, we always have to rebuild the server.
+	if _, err = os.Stat(outFile); os.IsNotExist(err) {
+		logger.Debug().Msgf("No server binary detected, force rebuilding server.")
+		needsRebuilding = true
+	} else if err != nil {
+		logger.Error().Msgf("Unable to access output location: %s", err)
+	}
 	// Rebuilt the server is there was an update or if the '--recompile' flag was passed.
 	if needsRebuilding || *flagRecompile {
 		logger.Info().Msgf("Rebuilding server...")
