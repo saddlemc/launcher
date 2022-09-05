@@ -31,7 +31,7 @@ func ParseIdentifier(path string) (Identifier, error) {
 	if err != nil {
 		return Identifier{}, err
 	}
-	hash, err := dirhash.HashDir(path, "h1", dirhash.Hash1)
+	hash, err := dirhash.HashDir(path, "", dirhash.Hash1)
 	if err != nil {
 		return Identifier{}, err
 	}
