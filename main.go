@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/saddlemc/launcher/bundler"
 	"github.com/saddlemc/launcher/config"
@@ -10,9 +11,11 @@ import (
 	"github.com/saddlemc/launcher/plugin/provider"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -164,9 +167,49 @@ func main() {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = filepath.Dir(outFile)
-		err = cmd.Run()
-		if _, ok = err.(*exec.ExitError); err != nil && !ok {
-			panic(err)
+		err = cmd.Start()
+		if err != nil {
+			logger.Fatal().Msg(err.Error())
+		}
+
+		// Wait for the program to end, and report any error that might have occurred.
+		shutdown := make(chan error)
+		go func() {
+			shutdown <- cmd.Wait()
+		}()
+
+		// When ctrl+c is pressed, make sure to wait for the server to close so the user can see all the output. We wait
+		// for up to 10 seconds for this shutdown to be successful before the server is forcibly killed.
+		timeout := make(chan struct{})
+		go func() {
+			c := make(chan os.Signal, 2)
+			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+			<-c
+
+			time.Sleep(time.Second * 10)
+			close(timeout)
+		}()
+
+		// Either wait for the graceful shutdown or for the server to time out.
+		select {
+		case err = <-shutdown:
+			if _, ok := err.(*exec.ExitError); err != nil && ok {
+				fmt.Println("")
+				logger.Fatal().Msgf(
+					"A fatal error caused the server to shut down unexpectedly. When reporting this error, " +
+						"please include the entire error message above, as well as your saddle.lock file at the time " +
+						"of the error. Consider trying to find the probable cause before opening an issue for the " +
+						"correct plugin.",
+				)
+			} else if err != nil {
+				logger.Fatal().Msgf("Error shutting down server: %s", err)
+			}
+		case _, _ = <-timeout:
+			logger.Error().Msgf("Server shutdown took to long, killing server...")
+			err := cmd.Process.Kill()
+			if err != nil {
+				logger.Fatal().Msgf("Error killing server: %s", err)
+			}
 		}
 	}
 }
